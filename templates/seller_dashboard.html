@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Seller Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="header">
+        <h1>Seller Dashboard</h1>
+        <a href="{{ url_for('index') }}">GO to Store</a>
+    </div>
+
+    <div class="panel">
+        <h3 id="formHeader" style="margin-top:0; color:green;">Publish New Equipment</h3>
+        <form id="equipmentForm" method="POST" action="{{ url_for('seller_dashboard') }}">
+            
+            <input type="hidden" name="equipment_id" id="form_equipment_id" value="">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label>Equipment Title</label>
+                    <input type="text" name="title" id="form_title" required placeholder="e.g., High Pressure Rotary Sprayer">
+                    
+                    <label>Category</label>
+                    <select name="category" id="form_category" required>
+                        <option value="Tractor">Tractor</option>
+                        <option value="Water Pump">Water Pump</option>
+                        <option value="Seeder">Seeder</option>
+                        <option value="Harvester">Harvester</option>
+                        <option value="Sprayer">Sprayer</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Price (Tk)</label>
+                    <input type="number" step="10" name="price" id="form_price" required placeholder="e.g., 15000.00">
+                    
+                    <label>Available Units in Stock</label>
+                    <input type="number" name="stock" id="form_stock" required placeholder="Available Units">
+                </div>
+            </div>
+            
+            <label>Product Description</label>
+            <textarea name="description" id="form_description" rows="3" placeholder="Provide a detailed description of the equipment..."></textarea>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="submit" id="submitBtn">Insert</button>
+                <button type="button" id="cancelEditBtn" onclick="resetFormState()" style="background: #64748b; display: none;">Cancel Update</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel" style="background: #f1f5f9;">
+        <form method="GET" action="{{ url_for('seller_dashboard') }}" style="display: flex; gap: 15px; align-items: center;">
+            <strong>Search Here</strong>
+            <input type="text" name="search" value="{{ request.args.get('search', '') }}">
+            <select name="category">
+                <option value="">Sub-Categories</option>
+                <option value="Tractor" {% if request.args.get('category') == 'Tractor' %}selected{% endif %}>Tractor</option>
+                <option value="Water Pump" {% if request.args.get('category') == 'Water Pump' %}selected{% endif %}>Water Pump</option>
+                <option value="Seeder" {% if request.args.get('category') == 'Seeder' %}selected{% endif %}>Seeder</option>
+                <option value="Harvester" {% if request.args.get('category') == 'Harvester' %}selected{% endif %}>Harvester</option>
+                <option value="Sprayer" {% if request.args.get('category') == 'Sprayer' %}selected{% endif %}>Sprayer</option>
+            </select>
+            <button type="submit" style="background:green;">Filter</button>
+            <a href="{{ url_for('seller_dashboard') }}" style="padding:10px 15px; background:#94a3b8; color:white; text-decoration:none; border-radius:6px; font-weight:600;">Reset Form</a>
+        </form>
+    </div>
+
+    <div class="panel">
+        <h3>Inventory Items</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Equipment ID</th>
+                    <th>Equipment Model</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock Status</th>
+                    <th>Seller Information</th>
+                    <th>Product Description</th>
+                    <th style="text-align: center;">Update</th>
+                    <th style="text-align: center;">Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory %}
+                <tr>
+                    <td><code>{{ item.equipment_id }}</code></td>
+                    <td><strong>{{ item.title }}</strong></td>
+                    <td><span class="category-badge">{{ item.category }}</span></td>
+                    <td style="color:#16a34a; font-weight:700;">{{ "%.2f"|format(item.price) }}BDT</td>
+                    <td><strong>{{ item.stock_quantity }}</strong> units</td>
+                    <td>
+                        <div style="font-size:13px; font-weight:600; color:#1e3a8a;">{{ item.seller_name }}</div>
+                        <div style="font-size:11px; color:#64748b;">{{ item.seller_email }}</div>
+                    </td>
+                    <td>{{ item.description }}</td>
+                    <td style="text-align: center;">
+                        <button type="button" 
+                                style="background: green; padding: 6px 12px; font-size: 13px;"
+                                onclick="populateUpdateForm('{{ item.equipment_id }}', '{{ item.title|e }}', '{{ item.category|e }}', '{{ item.price }}', '{{ item.stock_quantity }}', '{{ item.description|e }}')">
+                            Edit
+                        </button>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_equipment', equipment_id=item.equipment_id) }}" style="display: inline-block; margin: 0; vertical-align: middle;" onsubmit="return confirm('Are you sure you want to completely drop this item from the database record matrix?');">
+                            <button type="submit" style="background: #ef4444; padding: 6px 12px; font-size: 13px; margin-left: 5px;">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: #64748b; padding:20px;">No custom enterprise equipment items saved into your profile matrix yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function populateUpdateForm(id, title, category, price, stock, description) {
+            document.getElementById('form_equipment_id').value = id;
+            document.getElementById('form_title').value = title;
+            document.getElementById('form_category').value = category;
+            document.getElementById('form_price').value = price;
+            document.getElementById('form_stock').value = stock;
+            document.getElementById('form_description').value = description;
+
+            document.getElementById('formHeader').innerText = "Update Equipment";
+            document.getElementById('formHeader').style.color = "orange";
+            document.getElementById('submitBtn').innerText = "UPDATE";
+            document.getElementById('submitBtn').style.background = "orange";
+            document.getElementById('cancelEditBtn').style.display = "inline-block";
+            
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function resetFormState() {
+            document.getElementById('form_equipment_id').value = "";
+            document.getElementById('equipmentForm').reset();
+
+            document.getElementById('formHeader').innerText = "Publish New Equipment";
+            document.getElementById('formHeader').style.color = "green";
+            document.getElementById('submitBtn').innerText = "Insert";
+            document.getElementById('submitBtn').style.background = "";
+            document.getElementById('cancelEditBtn').style.display = "none";
+        }
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

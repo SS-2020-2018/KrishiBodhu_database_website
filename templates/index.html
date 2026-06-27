@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Buy Agricultural Equipment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="header">
+        <h1>Agricultural Equipment Marketplace</h1>
+        <div>
+            {% if session['user_name'] %}
+                Hello, <strong>{{ session['user_name'] }}</strong> ({{ session['user_role'] }}) | 
+                <a href="{{ url_for('cart') }}" style="background: #e67e22; padding: 6px 12px; border-radius: 4px; color:white;">Cart Matrix</a>
+                {% if session['user_role'] == 'seller' %}
+                    <a href="{{ url_for('seller_dashboard') }}" style="margin-left:15px;">Your Dashboard</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" style="margin-left:15px; color:#ef4444;">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Login</a> 
+                <a href="{{ url_for('register') }}" style="margin-left:10px;">Register</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="panel" style="background: #eff6ff;">
+        <form method="GET" action="{{ url_for('index') }}" style="display: flex; flex-direction: column; gap: 15px;">
+            
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <span style="font-weight: 700; color: #1e3a8a; min-width: 140px;">Filter Here:</span>
+                <input type="text" name="search" placeholder="Title or Description" value="{{ request.args.get('search', '') }}" style="margin:0; flex: 2; min-width: 180px;">
+                
+                <select name="category" style="margin:0; flex: 1; min-width: 140px;">
+                    <option value="" selected>All Categories</option>
+                    <option value="Tractor" {% if request.args.get('category') == 'Tractor' %}selected{% endif %}>Tractor</option>
+                    <option value="Water Pump" {% if request.args.get('category') == 'Water Pump' %}selected{% endif %}>Water Pump</option>
+                    <option value="Seeder" {% if request.args.get('category') == 'Seeder' %}selected{% endif %}>Seeder</option>
+                    <option value="Harvester" {% if request.args.get('category') == 'Harvester' %}selected{% endif %}>Harvester</option>
+                    <option value="Sprayer" {% if request.args.get('category') == 'Sprayer' %}selected{% endif %}>Sprayer</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; padding-left: 155px;">
+                <input type="number" step="10" name="min_price" placeholder="Min Price" value="{{ request.args.get('min_price', '') }}" style="margin:0; width: 110px;">
+                <input type="number" step="10" name="max_price" placeholder="Max Price" value="{{ request.args.get('max_price', '') }}" style="margin:0; width: 110px;">
+                <input type="number" name="having_min_count" placeholder="Min Listings" value="{{ request.args.get('having_min_count', '') }}" style="margin:0; width: 140px;">
+
+                <select name="set_operation" style="margin:0; width: 230px; background: #fffbeb; border: 1px solid #f59e0b; font-weight: 600;">
+                    <option value="">Set Operation</option>
+                    <option value="UNION" {% if request.args.get('set_operation') == 'UNION' %}selected{% endif %}>UNION</option>
+                    <option value="INTERSECT" {% if request.args.get('set_operation') == 'INTERSECT' %}selected{% endif %}>INTERSECT</option>
+                    <option value="MINUS" {% if request.args.get('set_operation') == 'MINUS' %}selected{% endif %}>MINUS</option>
+                </select>
+
+                <select name="sort_by" style="margin:0; width: 160px;">
+                    <option value="">ORDER BY</option>
+                    <option value="alpha_asc" {% if request.args.get('sort_by') == 'alpha_asc' %}selected{% endif %}>Title ASC</option>
+                    <option value="alpha_desc" {% if request.args.get('sort_by') == 'alpha_desc' %}selected{% endif %}>Title DESC</option>
+                </select>
+
+                <button type="submit" style="background:#2563eb; margin:0; padding: 10px 20px;">Filter Now</button>
+                <a href="{{ url_for('index') }}" style="background:#64748b; color:white; padding:10px 15px; text-decoration:none; border-radius:6px; font-weight:600;">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel" style="background: #f8fafc; margin-top: 20px;">
+        <h3 style="margin-top: 0; color: #334155;">GROUP BY & Aggregate Metrics Result Set</h3>
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="background: #cbd5e1;">
+                    <th style="padding: 10px;">Group (Category)</th>
+                    <th style="padding: 10px;">COUNT(equipment_id)</th>
+                    <th style="padding: 10px;">SUM(stock_quantity)</th>
+                    <th style="padding: 10px;">AVG(price)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in aggregates_summary %}
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 10px;"><strong>{{ stat.category }}</strong></td>
+                    <td style="padding: 10px;">{{ stat.total_listings }} unique items</td>
+                    <td style="padding: 10px;">{{ stat.stock_sum }} available units</td>
+                    <td style="padding: 10px; color: #16a34a; font-weight: 600;">${{ "%.2f"|format(stat.price_avg) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="padding: 15px; text-align: center; color: #64748b;">No categories match criteria.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2 style="margin: 20px 40px;">Equipment Catalog</h2>
+    <div class="catalog-grid">
+        {% for item in items %}
+        <div class="product-card">
+            <div>
+                <span class="category-badge">{{ item.category }}</span>
+                <h3 style="margin: 5px 0 10px 0; font-size: 19px; color:#1e293b;">{{ item.title }}</h3>
+                <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin-bottom: 12px;">{{ item.description }}</p>
+                
+                <div style="background: #f8fafc; border-left: 3px solid #cbd5e1; padding: 6px 10px; margin-bottom: 15px; border-radius: 0 4px 4px 0;">
+                    <span style="font-size: 11px; text-transform: uppercase; color:#94a3b8; font-weight:700; display:block; margin-bottom:2px;">Merchant Specification</span>
+                    <strong style="font-size: 13px; color:#334155;">{{ item.seller_name }}</strong>
+                    <span style="font-size: 12px; color:#64748b; display:block;">{{ item.seller_email }}</span>
+                </div>
+            </div>
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 12px; border-top: 1px dashed #cbd5e0;">
+                    <span style="font-size: 22px; font-weight: 700; color: #16a34a;">{{ "%.2f"|format(item.price) }}BDT</span>
+                    <span style="font-size: 13px; color: #64748b;">Remaining: <strong>{{ item.stock_quantity }}</strong></span>
+                </div>
+                <a href="{{ url_for('add_to_cart', equipment_id=item.equipment_id) }}" class="btn-primary" style="text-align:center; display:block; margin-top:15px;">Add to Cart</a>
+            </div>
+        </div>
+        {% else %}
+        <p style="grid-column: 1/-1; text-align: center; color: #64748b; padding: 40px; font-weight:600;">No query records found matching combined conditional relational expressions.</p>
+        {% endfor %}
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

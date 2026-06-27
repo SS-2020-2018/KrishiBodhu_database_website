@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sign In</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body
+    style="
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #cbd5e1;
+    "
+  >
+    <div class="panel">
+      <h2 style="text-align: center; color: #1e3a8a; margin-bottom: 25px">
+        Please Login Here
+      </h2>
+      <form method="POST">
+        <label>Email</label>
+        <input type="email" name="email" required />
+
+        <label>Password</label>
+        <input type="password" name="password" required />
+
+        <button
+          type="submit"
+          style="width: 100%; padding: 12px; font-size: 16px"
+        >
+          Sign In
+        </button>
+      </form>
+      <p
+        style="
+          text-align: center;
+          margin-top: 20px;
+          font-size: 14px;
+          color: #64748b;
+        "
+      >
+        Not registered yet?
+        <a
+          href="{{ url_for('register') }}"
+          style="color: #2563eb; font-weight: 700; text-decoration: none"
+          >Register</a
+        >
+      </p>
+    </div>
+  </body>
+</html>

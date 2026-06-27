@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Register Yourself</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body
+    style="
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #cbd5e1;
+    "
+  >
+    <div
+      class="panel"
+      style="
+        width: 400px;
+      "
+    >
+      <h2 style="text-align: center; color: #1e3a8a; margin-bottom: 25px">
+        Register Yourself
+      </h2>
+      <form method="POST">
+        <label>Full Name</label>
+        <input
+          type="text"
+          name="name"
+          required
+        />
+        <label>Email</label>
+        <input
+          type="email"
+          name="email"
+          required
+        />
+
+        <label>Password</label>
+        <input
+          type="password"
+          name="password"
+          required
+        
+        />
+
+        <label>Assigned Role</label>
+        <select name="role" required>
+          <option value="customer">
+            (Farmer/Buyer)
+          </option>
+          <option value="seller">
+            Seller
+          </option>
+        </select>
+
+        <button
+          type="submit"
+          style="
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background: #16a34a;
+          "
+        >
+          Register
+        </button>
+      </form>
+      <p
+        style="
+          text-align: center;
+          margin-top: 20px;
+          font-size: 14px;
+          color: #64748b;
+        "
+      >
+        Already Registered?
+        <a
+          href="{{ url_for('login') }}"
+          style="color: #2563eb; font-weight: 700; text-decoration: none"
+          >Login Here</a
+        >
+      </p>
+    </div>
+  </body>
+</html>
